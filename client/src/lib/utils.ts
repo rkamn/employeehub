@@ -64,3 +64,80 @@ export function getCurrentTime(): string {
 export function getCurrentDate(): string {
   return new Date().toISOString().split('T')[0];
 }
+
+export function getDateRange(days: number): string[] {
+  const dates: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+
+export function calculateAttendanceRate(present: number, total: number): number {
+  return total > 0 ? Math.round((present / total) * 100) : 0;
+}
+
+export function formatPercentage(value: number): string {
+  return `${value}%`;
+}
+
+export function getStatusIcon(status: 'present' | 'absent' | 'late'): string {
+  switch (status) {
+    case 'present':
+      return '✅';
+    case 'late':
+      return '⚠️';
+    case 'absent':
+      return '❌';
+    default:
+      return '❓';
+  }
+}
+
+export function getDepartmentIcon(department: string): string {
+  const icons: Record<string, string> = {
+    'Engineering': '👨‍💻',
+    'Product': '📱',
+    'Design': '🎨',
+    'Marketing': '📢',
+    'Sales': '💼',
+    'HR': '👥',
+    'Finance': '💰',
+    'Operations': '⚙️'
+  };
+  return icons[department] || '🏢';
+}
+
+export function getActivityIcon(type: 'employee_added' | 'clock_in' | 'clock_out' | 'attendance_added'): string {
+  switch (type) {
+    case 'employee_added':
+      return '👤';
+    case 'clock_in':
+      return '🕘';
+    case 'clock_out':
+      return '🕐';
+    case 'attendance_added':
+      return '📝';
+    default:
+      return '📋';
+  }
+}
+
+export function formatRelativeTime(timestamp: string): string {
+  const now = new Date();
+  const time = new Date(timestamp);
+  const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  
+  return time.toLocaleDateString();
+}

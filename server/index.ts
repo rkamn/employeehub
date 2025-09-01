@@ -229,6 +229,16 @@ app.post('/api/attendance/clock-out', (req, res) => {
   }
 });
 
+// Dashboard endpoint
+app.get('/api/dashboard', (req, res) => {
+  try {
+    const stats = storage.getDashboardStats();
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Employee Hub API is running' });

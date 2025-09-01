@@ -1,4 +1,4 @@
-import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest, AttendanceRecord, CreateAttendanceRequest } from '../../../shared/schema';
+import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest, AttendanceRecord, CreateAttendanceRequest, DashboardStats } from '../../../shared/schema';
 
 const API_BASE = '/api';
 
@@ -94,6 +94,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ employeeId }),
     });
+  }
+
+  // Dashboard operations
+  async getDashboardStats(): Promise<DashboardStats> {
+    return this.request<DashboardStats>('/dashboard');
   }
 }
 
