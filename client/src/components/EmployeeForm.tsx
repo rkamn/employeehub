@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Employee, CreateEmployeeRequest } from '../../../shared/schema';
+import { formatMobileNumber, validateMobileNumber, formatMobileForStorage } from '../lib/utils';
 
 interface EmployeeFormProps {
   employee?: Employee;
@@ -24,6 +25,8 @@ export function EmployeeForm({ employee, onSubmit, onCancel, isEdit = false }: E
 
   useEffect(() => {
     if (employee) {
+      // Extract just the mobile number digits for editing
+      const mobileData = formatMobileNumber(employee.phone || '');
       setFormData({
         firstName: employee.firstName,
         lastName: employee.lastName,
@@ -33,7 +36,7 @@ export function EmployeeForm({ employee, onSubmit, onCancel, isEdit = false }: E
         salary: employee.salary,
         hireDate: employee.hireDate,
         status: employee.status,
-        phone: employee.phone || '',
+        phone: mobileData.number || '',
         address: employee.address || '',
       });
     }
@@ -41,7 +44,20 @@ export function EmployeeForm({ employee, onSubmit, onCancel, isEdit = false }: E
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Validate mobile number if provided
+    if (formData.phone && !validateMobileNumber(formData.phone)) {
+      alert('Please enter a valid 10-digit mobile number (should start with 6, 7, 8, or 9)');
+      return;
+    }
+    
+    // Format phone for storage
+    const submissionData = {
+      ...formData,
+      phone: formData.phone ? formatMobileForStorage(formData.phone) : ''
+    };
+    
+    onSubmit(submissionData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -49,6 +65,16 @@ export function EmployeeForm({ employee, onSubmit, onCancel, isEdit = false }: E
     setFormData(prev => ({
       ...prev,
       [name]: name === 'salary' ? parseFloat(value) || 0 : value,
+    }));
+  };
+
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits and limit to 10 characters
+    const digitsOnly = value.replace(/[^0-9]/g, '').slice(0, 10);
+    setFormData(prev => ({
+      ...prev,
+      phone: digitsOnly
     }));
   };
 
@@ -163,14 +189,24 @@ export function EmployeeForm({ employee, onSubmit, onCancel, isEdit = false }: E
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Phone (Optional)</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-sm font-medium mb-1">Mobile (Optional)</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 text-sm text-green-600 bg-green-50 border border-r-0 border-gray-300 rounded-l-md font-medium">
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  value={formData.phone ? formatMobileNumber(formData.phone).number : ''}
+                  onChange={handleMobileChange}
+                  maxLength={10}
+                  pattern="[6-9][0-9]{9}"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              {formData.phone && !validateMobileNumber(formData.phone) && (
+                <p className="text-sm text-red-600 mt-1">Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9</p>
+              )}
             </div>
 
             <div>

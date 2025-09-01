@@ -141,3 +141,61 @@ export function formatRelativeTime(timestamp: string): string {
   
   return time.toLocaleDateString();
 }
+
+export function formatMobileNumber(phone: string): { countryCode: string; number: string } {
+  if (!phone) return { countryCode: '', number: '' };
+  
+  // Handle existing full format like '+91-9876543210'
+  if (phone.startsWith('+91-')) {
+    return {
+      countryCode: '+91',
+      number: phone.replace('+91-', '')
+    };
+  }
+  
+  // Handle full format without dash like '+919876543210'
+  if (phone.startsWith('+91')) {
+    return {
+      countryCode: '+91',
+      number: phone.replace('+91', '')
+    };
+  }
+  
+  // Handle just the 10-digit number
+  if (phone.length === 10 && /^[0-9]+$/.test(phone)) {
+    return {
+      countryCode: '+91',
+      number: phone
+    };
+  }
+  
+  // For any other format, try to extract
+  return {
+    countryCode: '+91',
+    number: phone.replace(/[^0-9]/g, '').slice(-10)
+  };
+}
+
+export function validateMobileNumber(phone: string): boolean {
+  if (!phone) return true; // Optional field
+  
+  // Remove all non-digits
+  const digitsOnly = phone.replace(/[^0-9]/g, '');
+  
+  // Check if it's exactly 10 digits and starts with valid digits (6-9 for Indian mobile)
+  return digitsOnly.length === 10 && /^[6-9][0-9]{9}$/.test(digitsOnly);
+}
+
+export function formatMobileForStorage(phone: string): string {
+  if (!phone) return '';
+  
+  // Remove all non-digits
+  const digitsOnly = phone.replace(/[^0-9]/g, '');
+  
+  // If it's 10 digits, format as +91-XXXXXXXXXX
+  if (digitsOnly.length === 10) {
+    return `+91-${digitsOnly}`;
+  }
+  
+  return phone;
+}
