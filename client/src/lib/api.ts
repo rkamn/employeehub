@@ -1,4 +1,4 @@
-import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../../../shared/schema';
+import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest, AttendanceRecord, CreateAttendanceRequest } from '../../../shared/schema';
 
 const API_BASE = '/api';
 
@@ -49,6 +49,50 @@ class ApiService {
   async deleteEmployee(id: string): Promise<void> {
     return this.request<void>(`/employees/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Attendance operations
+  async getAllAttendance(): Promise<AttendanceRecord[]> {
+    return this.request<AttendanceRecord[]>('/attendance');
+  }
+
+  async getAttendanceByEmployeeId(employeeId: string): Promise<AttendanceRecord[]> {
+    return this.request<AttendanceRecord[]>(`/attendance/employee/${employeeId}`);
+  }
+
+  async createAttendanceRecord(data: CreateAttendanceRequest): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>('/attendance', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>(`/attendance/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAttendanceRecord(id: string): Promise<void> {
+    return this.request<void>(`/attendance/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Clock in/out operations
+  async clockIn(employeeId: string): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>('/attendance/clock-in', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId }),
+    });
+  }
+
+  async clockOut(employeeId: string): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>('/attendance/clock-out', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId }),
     });
   }
 }

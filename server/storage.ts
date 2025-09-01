@@ -49,6 +49,56 @@ class InMemoryStorage {
     ];
 
     sampleEmployees.forEach(emp => this.employees.set(emp.id, emp));
+    
+    // Add sample attendance data
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const sampleAttendance: AttendanceRecord[] = [
+      {
+        id: 'att1',
+        employeeId: '1',
+        date: today,
+        clockIn: '09:00',
+        status: 'present'
+      },
+      {
+        id: 'att2',
+        employeeId: '2',
+        date: today,
+        clockIn: '09:15',
+        status: 'late'
+      },
+      {
+        id: 'att3',
+        employeeId: '3',
+        date: yesterday,
+        clockIn: '08:45',
+        clockOut: '17:30',
+        totalHours: 8.75,
+        status: 'present'
+      },
+      {
+        id: 'att4',
+        employeeId: '1',
+        date: yesterday,
+        clockIn: '09:00',
+        clockOut: '18:00',
+        totalHours: 9,
+        status: 'present'
+      },
+      {
+        id: 'att5',
+        employeeId: '2',
+        date: yesterday,
+        clockIn: '09:30',
+        clockOut: '17:45',
+        totalHours: 8.25,
+        status: 'late'
+      }
+    ];
+    
+    sampleAttendance.forEach(att => this.attendance.set(att.id, att));
   }
 
   // Employee operations
@@ -102,6 +152,25 @@ class InMemoryStorage {
     };
     this.attendance.set(id, attendanceRecord);
     return attendanceRecord;
+  }
+
+  updateAttendanceRecord(id: string, data: Partial<AttendanceRecord>): AttendanceRecord | null {
+    const existing = this.attendance.get(id);
+    if (!existing) return null;
+
+    const updated: AttendanceRecord = { ...existing, ...data };
+    this.attendance.set(id, updated);
+    return updated;
+  }
+
+  deleteAttendanceRecord(id: string): boolean {
+    return this.attendance.delete(id);
+  }
+
+  getAttendanceByDate(date: string): AttendanceRecord[] {
+    return Array.from(this.attendance.values()).filter(
+      record => record.date === date
+    );
   }
 }
 
