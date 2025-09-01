@@ -1,4 +1,4 @@
-import { Employee, AttendanceRecord, CreateEmployeeRequest, UpdateEmployeeRequest } from '../shared/schema.js';
+import { Employee, AttendanceRecord, CreateEmployeeRequest, UpdateEmployeeRequest, DashboardStats, EmployeeStats, AttendanceStats, RecentActivity, DepartmentAttendanceStats, AttendanceTrendData } from '../shared/schema.js';
 
 class InMemoryStorage {
   private employees: Map<string, Employee> = new Map();
@@ -171,6 +171,135 @@ class InMemoryStorage {
     return Array.from(this.attendance.values()).filter(
       record => record.date === date
     );
+  }
+
+  // Dashboard analytics methods
+  getDashboardStats(): DashboardStats {
+    return {
+      employees: this.getEmployeeStats(),
+      attendance: this.getAttendanceStats(),
+      recentActivity: this.getRecentActivity(),
+      departmentAttendance: this.getDepartmentAttendanceStats(),
+      attendanceTrend: this.getAttendanceTrend()
+    };
+  }
+
+  getEmployeeStats(): EmployeeStats {
+    const employees = this.getAllEmployees();
+    const departmentCounts: Record<string, number> = {};
+    
+    employees.forEach(emp => {
+      departmentCounts[emp.department] = (departmentCounts[emp.department] || 0) + 1;
+    });
+
+    return {
+      totalEmployees: employees.length,
+      activeEmployees: employees.filter(emp => emp.status === 'active').length,
+      inactiveEmployees: employees.filter(emp => emp.status === 'inactive').length,
+      departmentCounts
+    };
+  }
+
+  getAttendanceStats(): AttendanceStats {
+    const today = new Date().toISOString().split('T')[0];
+    const todayAttendance = this.getAttendanceByDate(today);
+    
+    return {
+      totalRecords: this.getAllAttendance().length,
+      presentToday: todayAttendance.filter(att => att.status === 'present').length,
+      lateToday: todayAttendance.filter(att => att.status === 'late').length,
+      absentToday: todayAttendance.filter(att => att.status === 'absent').length
+    };
+  }
+
+  getRecentActivity(): RecentActivity[] {
+    const activities: RecentActivity[] = [];
+    const attendance = this.getAllAttendance();
+    const employees = this.getAllEmployees();
+    
+    // Add recent attendance activities
+    attendance.slice(-10).forEach(record => {
+      const employee = this.getEmployeeById(record.employeeId);
+      if (employee) {
+        if (record.clockOut) {
+          activities.push({
+            id: `clock_out_${record.id}`,
+            type: 'clock_out',
+            description: `${employee.firstName} ${employee.lastName} clocked out`,
+            timestamp: new Date(`${record.date}T${record.clockOut}`).toISOString(),
+            employeeName: `${employee.firstName} ${employee.lastName}`
+          });
+        }
+        activities.push({
+          id: `clock_in_${record.id}`,
+          type: 'clock_in',
+          description: `${employee.firstName} ${employee.lastName} clocked in`,
+          timestamp: new Date(`${record.date}T${record.clockIn}`).toISOString(),
+          employeeName: `${employee.firstName} ${employee.lastName}`
+        });
+      }
+    });
+    
+    // Add recent employee additions
+    employees.slice(-5).forEach(employee => {
+      activities.push({
+        id: `employee_${employee.id}`,
+        type: 'employee_added',
+        description: `${employee.firstName} ${employee.lastName} joined as ${employee.position}`,
+        timestamp: new Date(employee.hireDate).toISOString(),
+        employeeName: `${employee.firstName} ${employee.lastName}`
+      });
+    });
+    
+    return activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
+  }
+
+  getDepartmentAttendanceStats(): DepartmentAttendanceStats[] {
+    const today = new Date().toISOString().split('T')[0];
+    const todayAttendance = this.getAttendanceByDate(today);
+    const employees = this.getAllEmployees();
+    const departments = [...new Set(employees.map(emp => emp.department))];
+    
+    return departments.map(department => {
+      const deptEmployees = employees.filter(emp => emp.department === department);
+      const deptPresentToday = todayAttendance.filter(att => {
+        const employee = this.getEmployeeById(att.employeeId);
+        return employee?.department === department && att.status === 'present';
+      }).length;
+      
+      return {
+        department,
+        totalEmployees: deptEmployees.length,
+        presentToday: deptPresentToday,
+        attendanceRate: deptEmployees.length > 0 ? Math.round((deptPresentToday / deptEmployees.length) * 100) : 0
+      };
+    });
+  }
+
+  getAttendanceTrend(days: number = 7): AttendanceTrendData[] {
+    const dateRange: string[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dateRange.push(date.toISOString().split('T')[0]);
+    }
+    
+    return dateRange.map(date => {
+      const dayAttendance = this.getAttendanceByDate(date);
+      const present = dayAttendance.filter(att => att.status === 'present').length;
+      const late = dayAttendance.filter(att => att.status === 'late').length;
+      const absent = dayAttendance.filter(att => att.status === 'absent').length;
+      
+      return {
+        date,
+        present,
+        late,
+        absent,
+        total: present + late + absent
+      };
+    });
   }
 }
 

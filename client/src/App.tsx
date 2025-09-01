@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest, AttendanceRecord, CreateAttendanceRequest } from '../../shared/schema';
+import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest, AttendanceRecord, CreateAttendanceRequest, DashboardStats } from '../../shared/schema';
 import { EmployeeCard } from './components/EmployeeCard';
 import { EmployeeForm } from './components/EmployeeForm';
 import { AttendanceCard } from './components/AttendanceCard';
 import { AttendanceForm } from './components/AttendanceForm';
 import { ClockInOut } from './components/ClockInOut';
+import { StatsCard } from './components/StatsCard';
+import { DepartmentCard } from './components/DepartmentCard';
+import { RecentActivity } from './components/RecentActivity';
+import { AttendanceTrend } from './components/AttendanceTrend';
 import { apiService } from './lib/api';
 
-type ViewMode = 'employees' | 'attendance';
+type ViewMode = 'dashboard' | 'employees' | 'attendance';
 
 function App() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('employees');
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [loading, setLoading] = useState(true);
   const [clockLoading, setClockLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +30,8 @@ function App() {
     loadEmployees();
     if (viewMode === 'attendance') {
       loadAttendance();
+    } else if (viewMode === 'dashboard') {
+      loadDashboardStats();
     }
   }, [viewMode]);
 
@@ -188,6 +195,18 @@ function App() {
     return employees.find(emp => emp.id === id);
   };
 
+  // Dashboard functions
+  const loadDashboardStats = async () => {
+    try {
+      const data = await apiService.getDashboardStats();
+      setDashboardStats(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load dashboard statistics');
+      console.error('Error loading dashboard:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -226,6 +245,16 @@ function App() {
           {/* Navigation Tabs */}
           <div className="mt-6 border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setViewMode('dashboard')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  viewMode === 'dashboard'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📊 Dashboard
+              </button>
               <button
                 onClick={() => setViewMode('employees')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -281,7 +310,62 @@ function App() {
         </div>
 
         <main>
-          {viewMode === 'employees' ? (
+          {viewMode === 'dashboard' ? (
+            // Dashboard View
+            dashboardStats ? (
+              <div className="space-y-6">
+                {/* Key Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatsCard
+                    title="Total Employees"
+                    value={dashboardStats.employees.totalEmployees}
+                    icon="👥"
+                    color="blue"
+                  />
+                  <StatsCard
+                    title="Present Today"
+                    value={dashboardStats.attendance.presentToday}
+                    icon="✅"
+                    color="green"
+                  />
+                  <StatsCard
+                    title="Late Today"
+                    value={dashboardStats.attendance.lateToday}
+                    icon="⚠️"
+                    color="yellow"
+                  />
+                  <StatsCard
+                    title="Total Records"
+                    value={dashboardStats.attendance.totalRecords}
+                    icon="📋"
+                    color="gray"
+                  />
+                </div>
+
+                {/* Charts and Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AttendanceTrend data={dashboardStats.attendanceTrend} />
+                  <RecentActivity activities={dashboardStats.recentActivity} />
+                </div>
+
+                {/* Department Statistics */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Department Attendance</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {dashboardStats.departmentAttendance.map(dept => (
+                      <DepartmentCard key={dept.department} department={dept} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Loading Dashboard...</h3>
+                <p className="text-gray-600">Gathering analytics and statistics</p>
+              </div>
+            )
+          ) : viewMode === 'employees' ? (
             // Employee View
             employees.length === 0 ? (
               <div className="text-center py-12">

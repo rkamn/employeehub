@@ -40,3 +40,34 @@ export interface AttendanceStats {
   absentToday: number;
   lateToday: number;
 }
+
+export interface DashboardStats {
+  employees: EmployeeStats;
+  attendance: AttendanceStats;
+  recentActivity: RecentActivity[];
+  departmentAttendance: DepartmentAttendanceStats[];
+  attendanceTrend: AttendanceTrendData[];
+}
+
+export interface RecentActivity {
+  id: string;
+  type: 'employee_added' | 'clock_in' | 'clock_out' | 'attendance_added';
+  description: string;
+  timestamp: string;
+  employeeName?: string;
+}
+
+export interface DepartmentAttendanceStats {
+  department: string;
+  totalEmployees: number;
+  presentToday: number;
+  attendanceRate: number;
+}
+
+export interface AttendanceTrendData {
+  date: string;
+  present: number;
+  late: number;
+  absent: number;
+  total: number;
+}
