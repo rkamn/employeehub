@@ -20,7 +20,7 @@ class InMemoryStorage {
         salary: 75000,
         hireDate: '2023-01-15',
         status: 'active',
-        phone: '+1-555-0123',
+        phone: '+91-9876543210',
         address: '123 Main St, Anytown, USA'
       },
       {
@@ -33,7 +33,7 @@ class InMemoryStorage {
         salary: 85000,
         hireDate: '2022-11-01',
         status: 'active',
-        phone: '+1-555-0124'
+        phone: '+91-8765432109'
       },
       {
         id: '3',

@@ -1,5 +1,5 @@
 import { Employee } from '../../../shared/schema';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatMobileNumber } from '../lib/utils';
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -35,7 +35,9 @@ export function EmployeeCard({ employee, onEdit, onDelete }: EmployeeCardProps) 
         </p>
         {employee.phone && (
           <p className="text-sm">
-            <span className="font-medium">Phone:</span> {employee.phone}
+            <span className="font-medium">Mobile:</span> 
+            <span className="text-green-600 font-medium">{formatMobileNumber(employee.phone).countryCode}</span>
+            <span className="ml-1">{formatMobileNumber(employee.phone).number}</span>
           </p>
         )}
         <p className="text-sm">
